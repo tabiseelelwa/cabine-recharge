@@ -1,40 +1,38 @@
 import * as mysql from 'mysql2/promise';
 
-// Réutilise le pool entre les rechargements à chaud en développement
-const g = globalThis as unknown as { __pool?: mysql.Pool };
-
-const host = process.env.DB_HOST || '127.0.0.1';
-const isLocal = host === '127.0.0.1' || host === 'localhost';
-
-// SSL obligatoire pour TiDB Cloud ; désactivé en local (forçable avec DB_SSL=true/false)
-const useSsl = process.env.DB_SSL ? process.env.DB_SSL === 'true' : !isLocal;
+const isTiDB = process.env.DB_HOST?.includes('tidbcloud.com') ?? false;
 
 const CONFIG: mysql.ConnectionOptions = {
-  host,
-  port: Number(process.env.DB_PORT || 3306),
+  host: process.env.DB_HOST || '127.0.0.1',
+  port: Number(process.env.DB_PORT) || (isTiDB ? 4000 : 3306),
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'cabine_recharge',
-  ...(useSsl && { ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true } }),
+  ssl: isTiDB ? { minVersion: 'TLSv1.2', rejectUnauthorized: true } : undefined,
+  charset: 'utf8mb4',
+  dateStrings: true,
+  connectTimeout: 10000,
 };
 
-/** Connexion dédiée acceptant plusieurs instructions (migrations, restauration). À fermer avec .end() */
-export function connexionMultiple() {
-  return mysql.createConnection({ ...CONFIG, multipleStatements: true, charset: 'utf8mb4', dateStrings: true });
-}
+// Réutilise le pool entre les rechargements à chaud en développement
+const g = globalThis as unknown as { __pool?: mysql.Pool };
 
 export const pool: mysql.Pool =
   g.__pool ??
   mysql.createPool({
     ...CONFIG,
-    waitForConnections: true,
-    connectionLimit: 10,
     decimalNumbers: true,
-    dateStrings: true,
-    charset: 'utf8mb4',
+    waitForConnections: true,
+    connectionLimit: 5,
+    queueLimit: 0,
   });
 
 if (process.env.NODE_ENV !== 'production') g.__pool = pool;
+
+/** Connexion dédiée acceptant plusieurs instructions (migrations, restauration). À fermer avec .end() */
+export function connexionMultiple() {
+  return mysql.createConnection({ ...CONFIG, multipleStatements: true });
+}
 
 /** Requête SELECT : renvoie les lignes */
 export async function query<T = any>(sql: string, params: unknown[] = []): Promise<T[]> {
