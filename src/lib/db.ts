@@ -1,72 +1,70 @@
-import mysql, { type Pool, type PoolConnection, type PoolOptions, type ResultSetHeader } from 'mysql2/promise';
+import * as mysql from 'mysql2/promise';
 
-type Params = unknown[];
+// Réutilise le pool entre les rechargements à chaud en développement
+const g = globalThis as unknown as { __pool?: mysql.Pool };
 
-const env = process.env;
-const host = env.DB_HOST ?? '127.0.0.1';
-const isLocal = ['127.0.0.1', 'localhost'].includes(host);
+const host = process.env.DB_HOST || '127.0.0.1';
+const isLocal = host === '127.0.0.1' || host === 'localhost';
 
-/** SSL obligatoire pour TiDB Cloud ; désactivé en local sauf si DB_SSL=true */
-const useSsl = env.DB_SSL ? env.DB_SSL === 'true' : !isLocal;
+// SSL obligatoire pour TiDB Cloud ; désactivé en local (forçable avec DB_SSL=true/false)
+const useSsl = process.env.DB_SSL ? process.env.DB_SSL === 'true' : !isLocal;
 
-const config: PoolOptions = {
+const CONFIG: mysql.ConnectionOptions = {
   host,
-  port: Number(env.DB_PORT ?? (isLocal ? 3306 : 4000)),
-  user: env.DB_USER ?? 'root',
-  password: env.DB_PASSWORD ?? '',
-  database: env.DB_NAME ?? 'cabine_recharge',
-  charset: 'utf8mb4',
-  dateStrings: true,
-  decimalNumbers: true,
+  port: Number(process.env.DB_PORT || 3306),
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'cabine_recharge',
   ...(useSsl && { ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true } }),
 };
 
-// Un seul pool par instance (évite d'en recréer à chaque rechargement à chaud en dev)
-const globalForDb = globalThis as unknown as { __pool?: Pool };
+/** Connexion dédiée acceptant plusieurs instructions (migrations, restauration). À fermer avec .end() */
+export function connexionMultiple() {
+  return mysql.createConnection({ ...CONFIG, multipleStatements: true, charset: 'utf8mb4', dateStrings: true });
+}
 
-export const pool: Pool =
-  globalForDb.__pool ??
+export const pool: mysql.Pool =
+  g.__pool ??
   mysql.createPool({
-    ...config,
+    ...CONFIG,
     waitForConnections: true,
-    connectionLimit: isLocal ? 10 : 5, // limiter les connexions côté serverless
-    enableKeepAlive: true,
+    connectionLimit: 10,
+    decimalNumbers: true,
+    dateStrings: true,
+    charset: 'utf8mb4',
   });
 
-if (env.NODE_ENV !== 'production') globalForDb.__pool = pool;
+if (process.env.NODE_ENV !== 'production') g.__pool = pool;
 
-/** Connexion dédiée multi-instructions (migrations, restauration). Penser à appeler .end() */
-export const connexionMultiple = () => mysql.createConnection({ ...config, multipleStatements: true });
-
-/** SELECT : renvoie toutes les lignes */
-export async function query<T = unknown>(sql: string, params: Params = []): Promise<T[]> {
+/** Requête SELECT : renvoie les lignes */
+export async function query<T = any>(sql: string, params: unknown[] = []): Promise<T[]> {
   const [rows] = await pool.query(sql, params);
   return rows as T[];
 }
 
-/** SELECT : renvoie la première ligne ou null */
-export async function queryOne<T = unknown>(sql: string, params: Params = []): Promise<T | null> {
-  const [first] = await query<T>(sql, params);
-  return first ?? null;
+/** Première ligne ou null */
+export async function queryOne<T = any>(sql: string, params: unknown[] = []): Promise<T | null> {
+  const rows = await query<T>(sql, params);
+  return rows[0] ?? null;
 }
 
 /** INSERT / UPDATE / DELETE */
-export async function execute(sql: string, params: Params = []): Promise<ResultSetHeader> {
-  const [result] = await pool.query<ResultSetHeader>(sql, params);
-  return result;
+export async function execute(sql: string, params: unknown[] = []) {
+  const [res] = await pool.query(sql, params);
+  return res as mysql.ResultSetHeader;
 }
 
-/** Exécute `fn` dans une transaction (commit si succès, rollback sinon) */
-export async function transaction<T>(fn: (conn: PoolConnection) => Promise<T>): Promise<T> {
+/** Exécute une fonction dans une transaction */
+export async function transaction<T>(fn: (conn: mysql.PoolConnection) => Promise<T>): Promise<T> {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
     const result = await fn(conn);
     await conn.commit();
     return result;
-  } catch (error) {
+  } catch (e) {
     await conn.rollback();
-    throw error;
+    throw e;
   } finally {
     conn.release();
   }
