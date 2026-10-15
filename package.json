@@ -1,0 +1,32 @@
+{
+  "name": "cabine-recharge",
+  "version": "4.0.0",
+  "private": true,
+  "description": "Gestion d'une cabine de recharge de téléphones à énergie solaire",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0",
+    "db:init": "node scripts/init-db.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.59.0",
+    "axios": "^1.12.0",
+    "bcryptjs": "^2.4.3",
+    "jose": "^5.9.0",
+    "mysql2": "^3.11.0",
+    "next": "^15.5.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.6.0"
+  }
+}

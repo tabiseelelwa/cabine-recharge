@@ -1,0 +1,156 @@
+/* ===== Cabine Solaire : Tailwind CSS v4 =====
+ * Tout le style est écrit en classes Tailwind dans les composants.
+ * Ce fichier ne contient que : les couleurs du thème (clair / sombre), les styles de base des champs
+ * de formulaire et l'animation des notifications.
+ */
+@import 'tailwindcss';
+
+/* Mode sombre piloté par l'attribut data-theme posé sur <html> (voir src/lib/theme.ts) */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ---------- Couleurs : thème clair (par défaut) ---------- */
+:root {
+  --fond: #f6f7f9;
+  --carte: #ffffff;
+  --encre: #1f2937;
+  --encre-2: #4b5563;
+  --encre-3: #6b7280;
+  --ligne: #e5e7eb;
+  --ligne-forte: #d1d5db;
+  --survol: #f3f4f6;
+  --champ: #ffffff;
+  --gris-pale: #eef0f3;
+
+  /* Couleur principale : rouge clair */
+  --primaire: #ef5350;
+  --primaire-fort: #d93a37;
+  --primaire-pale: #fdeceb;
+  --primaire-bord: #f8c7c5;
+
+  /* Couleur d'accent (textes et icônes) : bleu */
+  --bleu: #2563eb;
+  --bleu-texte: #1d4ed8;
+  --bleu-pale: #e8f0fe;
+  --bleu-bord: #c3d5fb;
+
+  --vert: #15803d;
+  --vert-plein: #15803d;
+  --vert-pale: #e7f6ec;
+  --vert-bord: #bbe5c9;
+
+  --danger: #b91c1c;
+  --danger-pale: #fdeaea;
+  --danger-bord: #f5c2c2;
+
+  color-scheme: light;
+}
+
+/* ---------- Couleurs : thème sombre (choisi par l'utilisateur) ---------- */
+[data-theme='dark'] {
+  --fond: #0f1419;
+  --carte: #171d24;
+  --encre: #e6e9ee;
+  --encre-2: #a9b1bc;
+  --encre-3: #808a96;
+  --ligne: #262e38;
+  --ligne-forte: #35404c;
+  --survol: #1e2630;
+  --champ: #11171d;
+  --gris-pale: #1f262f;
+
+  --primaire: #ef5350;
+  --primaire-fort: #f88e8c;
+  --primaire-pale: #3a1d1e;
+  --primaire-bord: #6b2c2c;
+
+  --bleu: #60a5fa;
+  --bleu-texte: #93c5fd;
+  --bleu-pale: #172a46;
+  --bleu-bord: #24426e;
+
+  --vert: #4ade80;
+  --vert-plein: #15803d;
+  --vert-pale: #12301f;
+  --vert-bord: #1f5134;
+
+  --danger: #f87171;
+  --danger-pale: #3a1a1a;
+  --danger-bord: #6b2626;
+
+  color-scheme: dark;
+}
+
+/* Les variables ci-dessus deviennent des couleurs Tailwind : bg-carte, text-encre-2, border-ligne, bg-primaire… */
+@theme inline {
+  --color-fond: var(--fond);
+  --color-carte: var(--carte);
+  --color-encre: var(--encre);
+  --color-encre-2: var(--encre-2);
+  --color-encre-3: var(--encre-3);
+  --color-ligne: var(--ligne);
+  --color-ligne-forte: var(--ligne-forte);
+  --color-survol: var(--survol);
+  --color-champ: var(--champ);
+  --color-gris-pale: var(--gris-pale);
+  --color-primaire: var(--primaire);
+  --color-primaire-fort: var(--primaire-fort);
+  --color-primaire-pale: var(--primaire-pale);
+  --color-primaire-bord: var(--primaire-bord);
+  --color-bleu: var(--bleu);
+  --color-bleu-texte: var(--bleu-texte);
+  --color-bleu-pale: var(--bleu-pale);
+  --color-bleu-bord: var(--bleu-bord);
+  --color-vert: var(--vert);
+  --color-vert-plein: var(--vert-plein);
+  --color-vert-pale: var(--vert-pale);
+  --color-vert-bord: var(--vert-bord);
+  --color-danger: var(--danger);
+  --color-danger-pale: var(--danger-pale);
+  --color-danger-bord: var(--danger-bord);
+}
+
+@theme {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --shadow-carte: 0 1px 2px rgb(16 24 40 / 0.05), 0 4px 14px rgb(16 24 40 / 0.04);
+  --animate-monte: monte 0.2s ease-out;
+
+  @keyframes monte {
+    from {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+  }
+}
+
+/* ---------- Styles de base ---------- */
+@layer base {
+  body {
+    @apply bg-fond font-sans text-[15px] leading-[1.45] text-encre antialiased;
+  }
+
+  /* Champs de formulaire : un seul style pour toute l'application */
+  input:not([type='checkbox'], [type='radio'], [type='file']),
+  select,
+  textarea {
+    @apply min-h-[42px] w-full rounded-lg border border-ligne-forte bg-champ px-3 py-2 text-encre outline-none transition-colors;
+    @apply placeholder:text-encre-3 focus:border-primaire focus:ring-2 focus:ring-primaire/25 disabled:opacity-60;
+  }
+  textarea {
+    @apply min-h-[70px] resize-y;
+  }
+  input[type='checkbox'] {
+    @apply size-[18px] shrink-0 accent-primaire;
+  }
+  button:focus-visible,
+  a:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primaire;
+  }
+  code {
+    @apply rounded bg-gris-pale px-1.5 py-px font-mono text-[0.85em] break-all;
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}

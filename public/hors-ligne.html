@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cabine Solaire · Hors ligne</title>
+<!-- Page autonome affichée sans le serveur : elle garde son propre petit style (Tailwind n'y est pas disponible). -->
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 20px; box-sizing: border-box;
+         font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f6f7f9; color: #1f2937; }
+  .carte { max-width: 380px; text-align: center; }
+  img { width: 72px; height: 72px; }
+  h1 { font-size: 1.3rem; margin: 16px 0 8px; }
+  p { color: #4b5563; line-height: 1.5; }
+  ul { text-align: left; color: #4b5563; line-height: 1.6; padding-left: 20px; }
+  button { margin-top: 12px; font: inherit; font-weight: 600; padding: 12px 22px; border: 0; border-radius: 10px; background: #ef5350; color: #fff; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="carte">
+    <img src="/icon.svg" alt="">
+    <h1>Le serveur de la cabine est injoignable</h1>
+    <p>Vérifiez :</p>
+    <ul>
+      <li>que ce téléphone est bien connecté au Wi-Fi de la cabine ;</li>
+      <li>que le PC de la cabine est allumé et que l'application tourne ;</li>
+      <li>que la batterie solaire alimente encore le PC et le routeur.</li>
+    </ul>
+    <button onclick="location.reload()">Réessayer</button>
+  </div>
+</body>
+</html>
